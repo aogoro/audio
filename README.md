@@ -57,7 +57,7 @@ cp -r /tmp/audio-skill/.codex .codex
 
 При первом вызове скрипт автоматически:
 1. Создаёт изолированный `.venv/` в директории скилла
-2. Устанавливает зависимости (`gigaam`, `silero-vad`, `torch`, `torchaudio`)
+2. Устанавливает зависимости (`gigaam`, `silero-vad`, `soundfile`, `torch`, `torchaudio`)
 3. Скачивает веса моделей GigaAM (~240MB) и silero-vad (~10MB)
 
 Суммарно ~750MB, 2-5 минут. Последующие запуски — только инференс.

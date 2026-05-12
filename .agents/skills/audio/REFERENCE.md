@@ -87,6 +87,7 @@ brew install ffmpeg
 Скрипт создаёт изолированный `.venv/` в директории скилла (`.agents/skills/audio/.venv/`) и ставит зависимости из `requirements.txt`:
 - `gigaam==0.1.0`
 - `silero-vad>=5.1`
+- `soundfile>=0.12` — audio backend для torchaudio (macOS не имеет sox_io)
 - `torch>=2.5,<2.9`, `torchaudio>=2.5,<2.9` — пины обязательны (GigaAM 0.1.0 совместим только с `<2.9`).
 
 Первый запуск скачивает:

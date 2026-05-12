@@ -130,7 +130,8 @@ def _ensure_wav_16k_mono(audio: Path) -> Path:
     Нужно всегда для longform-пути: silero-vad принимает только 16kHz mono tensor.
     Для коротких файлов вызывается только при падении torchaudio.info().
     """
-    tmp = Path(tempfile.gettempdir()) / (audio.stem + ".wav16k.wav")
+    safe_name = audio.stem.replace(" ", "_")
+    tmp = Path(tempfile.gettempdir()) / (safe_name + ".wav16k.wav")
     print(
         f"[info] predecode через ffmpeg → 16kHz mono WAV ({tmp.name})...",
         file=sys.stderr,
