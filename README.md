@@ -1,14 +1,15 @@
 # audio
 
-Russian speech-to-text transcription using [GigaAM v2](https://github.com/salute-developers/GigaAM) + [silero-vad](https://github.com/snakers4/silero-vad). Fully local, no API keys required. Works on CPU (macOS Apple Silicon, Linux).
+Russian speech-to-text transcription using [GigaAM v3](https://github.com/salute-developers/GigaAM) + [silero-vad](https://github.com/snakers4/silero-vad). Fully local, no API keys required. Works on CPU (macOS Apple Silicon, Linux).
 
 ---
 
-Транскрипция русского аудио через GigaAM v2 (open-source ASR от Сбера) + silero-vad для сегментации длинных записей. Полностью локально, без API-ключей.
+Транскрипция русского аудио через GigaAM v3 (open-source ASR от Сбера) + silero-vad для сегментации длинных записей. Полностью локально, без API-ключей.
 
 ## Возможности
 
-- Распознавание русской речи через GigaAM v2 (RNNT или CTC)
+- Распознавание русской речи через GigaAM v3 (end-to-end с пунктуацией и нормализацией текста)
+- Пунктуация, заглавные буквы, нормализация — из коробки (e2e модели)
 - Длинные аудио: silero-vad автоматически находит речевые сегменты
 - Аудио: m4a, mp3, wav, ogg, flac
 - Видео: mp4, webm, mkv, mov, m4v, avi (ffmpeg извлекает аудиодорожку)
@@ -70,7 +71,7 @@ cp -r /tmp/audio-skill/.codex .codex
 # Транскрибировать аудиофайл
 bash .agents/skills/audio/scripts/transcribe.sh recording.m4a
 
-# Быстрый режим (v2_ctc, в 3-4 раза быстрее)
+# Быстрый режим (v3_e2e_ctc, в 3-4 раза быстрее)
 bash .agents/skills/audio/scripts/transcribe.sh meeting.mp4 --fast
 
 # Указать выходной файл
@@ -84,7 +85,7 @@ bash .agents/skills/audio/scripts/transcribe.sh --check
 
 | Флаг | Описание |
 |------|----------|
-| `--fast` | Модель v2_ctc (быстрее в 3-4 раза, чуть ниже качество) |
+| `--fast` | Модель v3_e2e_ctc (быстрее в 3-4 раза, чуть ниже качество) |
 | `--out PATH` | Путь к выходному .md |
 | `--check` | Диагностика установки без аудио |
 
@@ -102,17 +103,17 @@ bash .agents/skills/audio/scripts/transcribe.sh --check
 ```markdown
 # Транскрипция: recording.m4a
 
-- Модель: gigaam-v2-rnnt
+- Модель: gigaam-v3-e2e-rnnt
 - VAD: silero-vad (open-source)
 - Длительность: 00:45:12
-- Дата: 2025-05-10 14:30
+- Дата: 2026-05-19 14:30
 - Аудио: `/path/to/recording.m4a`
 
 ## Сегменты
 
-**[00:00:00]** текст первого сегмента
+**[00:00:00]** Текст первого сегмента с пунктуацией.
 
-**[00:00:42]** текст второго сегмента
+**[00:00:42]** Текст второго сегмента с заглавными буквами.
 
 ## Полный текст
 
@@ -121,10 +122,10 @@ bash .agents/skills/audio/scripts/transcribe.sh --check
 
 ## Модели
 
-| Модель | Флаг | WER | Скорость (CPU) | Когда использовать |
-|--------|------|-----|----------------|-------------------|
-| v2_rnnt | (по умолчанию) | ~1.5-2% | RTF ~0.2-0.3 | Качество важно |
-| v2_ctc | `--fast` | ~2-3% | RTF ~0.05-0.1 | Быстрый черновик |
+| Модель | Флаг | Особенности | Когда использовать |
+|--------|------|-------------|-------------------|
+| v3_e2e_rnnt | (по умолчанию) | Пунктуация, нормализация, лучшее качество | Качество важно |
+| v3_e2e_ctc | `--fast` | Пунктуация, нормализация, быстрее в 3-4 раза | Быстрый черновик |
 
 ## Vendor-agnostic архитектура
 

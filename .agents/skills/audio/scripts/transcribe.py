@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Распознавание аудио через GigaAM v2.
+"""Распознавание аудио через GigaAM v3.
 
 CLI:
   transcribe.py <audio> [--out PATH] [--fast]
@@ -9,6 +9,7 @@ Exit codes:
   0  OK
   1  audio file not found
   2  ffmpeg not found (обрабатывается в bash-обёртке)
+  3  Python >= 3.10 not found (обрабатывается в bash-обёртке)
   4  GigaAM inference error
   5  output directory read-only
 
@@ -32,7 +33,7 @@ from pathlib import Path
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Распознавание аудио через GigaAM v2 (russian ASR).",
+        description="Распознавание аудио через GigaAM v3 (russian ASR).",
     )
     ap.add_argument(
         "audio", nargs="?", type=Path, help="Путь к аудио-файлу. Не нужен с --check."
@@ -44,7 +45,9 @@ def main() -> None:
         help="Путь к .md (по умолчанию — рядом с аудио).",
     )
     ap.add_argument(
-        "--fast", action="store_true", help="Быстрая модель v2_ctc вместо v2_rnnt."
+        "--fast",
+        action="store_true",
+        help="Быстрая модель v3_e2e_ctc вместо v3_e2e_rnnt.",
     )
     ap.add_argument(
         "--check", action="store_true", help="Диагностика установки без аудио."
@@ -62,7 +65,7 @@ def main() -> None:
     t0 = time.monotonic()
     duration = _get_duration(args.audio)
 
-    model_name = "v2_ctc" if args.fast else "v2_rnnt"
+    model_name = "v3_e2e_ctc" if args.fast else "v3_e2e_rnnt"
     print(
         f"[info] модель: {model_name}, длительность: {_fmt_time(duration)}",
         file=sys.stderr,
@@ -85,7 +88,7 @@ def main() -> None:
         except Exception as e:
             sys.stderr.write(f"GigaAM transcribe failed: {e}\n")
             sys.exit(4)
-        segments = [{"start": 0.0, "end": duration, "text": (text or "").strip()}]
+        segments = [{"start": 0.0, "end": duration, "text": str(text).strip()}]
     else:
         # Длинное аудио: predecode в 16kHz mono WAV + silero-vad
         wav_path = _ensure_wav_16k_mono(args.audio)
@@ -239,7 +242,7 @@ def _transcribe_longform(model, wav_path: Path) -> list[dict]:
         finally:
             tmp_wav.unlink(missing_ok=True)
 
-        text = (text or "").strip()
+        text = str(text).strip()
         segments.append({"start": s, "end": e, "text": text})
 
         if i % 5 == 0 or i == n:
@@ -313,7 +316,7 @@ def _write_md(
 
 
 def _run_check() -> None:
-    """Синтез 1-сек тишины + прогон через v2_ctc. Проверяет venv + ffmpeg + gigaam."""
+    """Синтез 1-сек тишины + прогон через v3_e2e_ctc. Проверяет venv + ffmpeg + gigaam."""
     print("[check] создаю тестовый WAV (1 сек тишины, 16kHz mono)...", flush=True)
     tmp = Path(tempfile.gettempdir()) / "audio-skill-check.wav"
     with wave.open(str(tmp), "wb") as w:
@@ -322,10 +325,10 @@ def _run_check() -> None:
         w.setframerate(16000)
         w.writeframes(struct.pack("<" + "h" * 16000, *([0] * 16000)))
 
-    print("[check] загружаю gigaam v2_ctc...", flush=True)
+    print("[check] загружаю gigaam v3_e2e_ctc...", flush=True)
     import gigaam  # type: ignore
 
-    m = gigaam.load_model("v2_ctc")
+    m = gigaam.load_model("v3_e2e_ctc")
 
     print("[check] прогоняю transcribe()...", flush=True)
     m.transcribe(str(tmp))
@@ -335,7 +338,7 @@ def _run_check() -> None:
 
     load_silero_vad()
 
-    print("OK: venv + ffmpeg + gigaam v2_ctc + silero-vad работают")
+    print("OK: venv + ffmpeg + gigaam v3_e2e_ctc + silero-vad работают")
 
 
 if __name__ == "__main__":
