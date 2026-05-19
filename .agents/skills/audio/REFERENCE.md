@@ -1,6 +1,6 @@
 # audio — vendor-agnostic канон скилла распознавания аудио
 
-Канонический слой для скилла `/audio` — распознавания русского аудио через [GigaAM](https://github.com/salute-developers/GigaAM) (open-source ASR от Сбера, PyPI `gigaam==0.1.0`) с VAD от [silero-vad](https://github.com/snakers4/silero-vad) (MIT).
+Канонический слой для скилла `/audio` — распознавания русского аудио через [GigaAM v3](https://github.com/salute-developers/GigaAM) (open-source ASR от Сбера, `gigaam[torch]` из GitHub) с VAD от [silero-vad](https://github.com/snakers4/silero-vad) (MIT).
 
 Тонкие обёртки для AI-агентов (размещаются рядом — в корне того же дерева, где лежит `.agents/`):
 - Claude Code: `.claude/skills/audio/SKILL.md`
@@ -12,9 +12,9 @@
 
 Принимает аудиофайл → возвращает `.md`-транскрипцию на русском.
 
-**Модели GigaAM v2:**
-- `v2_rnnt` — дефолт, качество приоритетно. RTF ~0.2-0.3 на CPU.
-- `v2_ctc` — через флаг `--fast`. Быстрее в 3-4 раза, WER чуть хуже (~2-3% vs 1.5-2%).
+**Модели GigaAM v3 (end-to-end с пунктуацией и нормализацией):**
+- `v3_e2e_rnnt` — дефолт, качество приоритетно. Пунктуация, заглавные буквы, нормализация текста из коробки.
+- `v3_e2e_ctc` — через флаг `--fast`. Быстрее в 3-4 раза, WER чуть хуже.
 
 **VAD (для аудио ≥25 сек):** [silero-vad](https://github.com/snakers4/silero-vad) находит речевые сегменты и режет их на куски ≤24 сек (лимит `GigaAM.transcribe()` — ≤25 сек). Без HF_TOKEN, без gated-условий — полностью out-of-the-box.
 
@@ -34,15 +34,15 @@ transcribe.sh --check
 Флаги (разбирает Python argparse, порядок не важен):
 - `audio-path` — позиционный, обязательный (кроме `--check`).
 - `--out PATH` — путь к выходному `.md`. По умолчанию `<audio-basename>.md` рядом с исходником.
-- `--fast` — переключает на `v2_ctc` (быстрее, чуть хуже качество).
-- `--check` — диагностика установки без аудио (синтезирует 1-сек WAV, прогоняет через `v2_ctc` + загружает silero-vad).
+- `--fast` — переключает на `v3_e2e_ctc` (быстрее, чуть хуже качество).
+- `--check` — диагностика установки без аудио (синтезирует 1-сек WAV, прогоняет через `v3_e2e_ctc` + загружает silero-vad).
 
 ## Выход (формат .md)
 
 ```markdown
 # Транскрипция: <filename>
 
-- Модель: gigaam-v2-rnnt
+- Модель: gigaam-v3-e2e-rnnt
 - VAD: silero-vad (open-source)
 - Длительность: HH:MM:SS
 - Дата: YYYY-MM-DD HH:MM
@@ -67,6 +67,7 @@ transcribe.sh --check
 | 0   | OK                                                     |
 | 1   | аудиофайл не найден                                    |
 | 2   | ffmpeg не установлен (проверяется в bash-обёртке)      |
+| 3   | Python >= 3.10 не найден (проверяется в bash-обёртке)  |
 | 4   | ошибка GigaAM (загрузка модели или инференс)           |
 | 5   | директория выхода read-only и fallback недоступен      |
 
@@ -85,14 +86,14 @@ brew install ffmpeg
 ### 3. Warm-up (первый запуск)
 
 Скрипт создаёт изолированный `.venv/` в директории скилла (`.agents/skills/audio/.venv/`) и ставит зависимости из `requirements.txt`:
-- `gigaam==0.1.0`
+- `gigaam[torch]` из GitHub (commit SHA pin)
 - `silero-vad>=5.1`
 - `soundfile>=0.12` — audio backend для torchaudio (macOS не имеет sox_io)
-- `torch>=2.5,<2.9`, `torchaudio>=2.5,<2.9` — пины обязательны (GigaAM 0.1.0 совместим только с `<2.9`).
+- `torch>=2.6,<2.9`, `torchaudio>=2.6,<2.9` — пины для стабильности (silero-vad совместим до 2.9).
 
 Первый запуск скачивает:
 - `torch` / `torchaudio` (~500MB)
-- Веса GigaAM `v2_ctc`/`v2_rnnt` при первом `load_model()` (~240MB)
+- Веса GigaAM `v3_e2e_ctc`/`v3_e2e_rnnt` при первом `load_model()` (~240MB)
 - `silero-vad` модель (~10MB) при первом VAD-вызове
 
 Итого 2-5 минут, последующие запуски — только инференс.
@@ -102,7 +103,7 @@ brew install ffmpeg
 ### 4. macOS / Apple Silicon
 
 Upstream GigaAM тестируется только на Linux/Ubuntu. На macOS:
-- CPU-режим работает (smoke-тест v1 прошёл)
+- CPU-режим работает (smoke-тест прошёл)
 - `torchcodec` может не иметь нативных wheels — `torchaudio.info()` падает на m4a/mp4
 - **Fallback в `transcribe.py`**: для короткого файла (<25с) при падении `torchaudio.info()` делаем predecode через ffmpeg → 16kHz mono WAV. Для длинного файла (≥25с) predecode делается всегда (silero-vad требует 16kHz mono tensor).
 - Проверка: `transcribe.sh --check` — если не валится, CPU-инференс + silero-vad работают.
@@ -126,7 +127,7 @@ Upstream GigaAM тестируется только на Linux/Ubuntu. На macO
 
 Если директория исходного аудио read-only (Google Drive клиента), Python автоматически пишет в `~/Downloads/audio-transcripts/<basename>.md`. Если и там нельзя — exit 5.
 
-## Точки расширения (не в v1)
+## Точки расширения
 
 - Диаризация спикеров → `--diarize` (требует pyannote speaker-diarization-3.1, возвращает HF_TOKEN-зависимость).
 - Экспорт SRT/VTT → `--format srt`.

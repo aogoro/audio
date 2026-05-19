@@ -1,12 +1,12 @@
 ---
 name: audio
-description: Распознавание аудио и видео-записей через GigaAM (русская ASR) + silero-vad. Аудио m4a/mp3/wav/ogg/flac + видео mp4/webm/mkv/mov/m4v/avi (ffmpeg извлекает аудиодорожку) → .md рядом с исходником. Флаг --fast → быстрая модель v2_ctc. Работает out-of-the-box, без токенов.
+description: Распознавание аудио и видео-записей через GigaAM v3 (русская ASR) + silero-vad. Аудио m4a/mp3/wav/ogg/flac + видео mp4/webm/mkv/mov/m4v/avi (ffmpeg извлекает аудиодорожку) → .md рядом с исходником. Флаг --fast → быстрая модель v3_e2e_ctc. Работает out-of-the-box, без токенов.
 metadata:
-  short-description: Russian ASR via GigaAM + silero-vad
-  version: "2.0"
+  short-description: Russian ASR via GigaAM v3 + silero-vad
+  version: "3.0"
 ---
 
-# Аудио-транскрипция (GigaAM + silero-vad)
+# Аудио-транскрипция (GigaAM v3 + silero-vad)
 
 Тонкая обёртка для Codex. Весь канон — в `.agents/skills/audio/REFERENCE.md` (каноническая документация, vendor-agnostic).
 
@@ -22,7 +22,7 @@ metadata:
 
 ### 2. Опциональные флаги
 
-- `--fast` — если пользователь хочет быстрый черновик (модель `v2_ctc` вместо `v2_rnnt`)
+- `--fast` — если пользователь хочет быстрый черновик (модель `v3_e2e_ctc` вместо `v3_e2e_rnnt`)
 - `--out <path>` — если явно указал путь выходного `.md`
 
 ### 3. Запусти
@@ -44,6 +44,7 @@ bash "$TRANSCRIBE_SH" "$AUDIO" [--out "$OUT"] [--fast]
 | 0   | OK — прочитай результирующий `.md` и покажи пользователю |
 | 1   | Файл не найден                                           |
 | 2   | Нет `ffmpeg` — `brew install ffmpeg`                     |
+| 3   | Python >= 3.10 не найден — `brew install python@3.12`    |
 | 4   | Ошибка GigaAM или silero-vad (загрузка модели/инференс)  |
 | 5   | Output-директория read-only                              |
 
@@ -53,10 +54,10 @@ bash "$TRANSCRIBE_SH" "$AUDIO" [--out "$OUT"] [--fast]
 bash "$TRANSCRIBE_SH" --check
 ```
 
-Без аудио: синтезирует 1-сек тишину, прогоняет через `v2_ctc`, загружает silero-vad. Проверяет что venv/ffmpeg/gigaam/silero-vad работают.
+Без аудио: синтезирует 1-сек тишину, прогоняет через `v3_e2e_ctc`, загружает silero-vad. Проверяет что venv/ffmpeg/gigaam/silero-vad работают.
 
 ## Примечания для Codex
 
 - При первой запуске: spawn subtask с увеличенным лимитом времени (до 5 мин на warm-up).
-- Для длинных файлов (>30 минут) сообщи пользователю ожидаемое время: `~15-25 минут` для `v2_rnnt` или `~5-10 минут` для `v2_ctc` (на CPU).
-- V2 убрал зависимость от HF_TOKEN и pyannote — если встретил упоминания в старой документации, они устарели.
+- Для длинных файлов (>30 минут) сообщи пользователю ожидаемое время: `~15-25 минут` для `v3_e2e_rnnt` или `~5-10 минут` для `v3_e2e_ctc` (на CPU).
+- HF_TOKEN и pyannote НЕ нужны — если встретил упоминания в старой документации, они устарели.

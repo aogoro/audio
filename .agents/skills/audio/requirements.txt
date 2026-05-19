@@ -1,9 +1,5 @@
-gigaam==0.1.0
+gigaam[torch] @ git+https://github.com/salute-developers/GigaAM.git@6e4b027c6fb554e09e8b9059b757a175295ab879
 silero-vad>=5.1
 soundfile>=0.12
-# Пины обязательны: GigaAM 0.1.0 совместим только с torch/torchaudio <2.9,
-# а silero-vad тянет их без верхнего pin. Без пинов pip возьмёт latest (2.11+),
-# что заставит silero требовать torchcodec и сломает GigaAM.
-# soundfile нужен как backend для torchaudio (macOS не имеет sox_io).
-torch>=2.5,<2.9
-torchaudio>=2.5,<2.9
+torch>=2.6,<2.9
+torchaudio>=2.6,<2.9
